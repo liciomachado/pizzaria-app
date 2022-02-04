@@ -39,7 +39,6 @@ export const Brand = styled.Image.attrs({
     height: 340px;
     margin-top: 64px;
     margin-bottom: 32px;
-    margin-left: 20px;
 `;
 
 export const ForgotPasswordButton = styled.TouchableOpacity`
