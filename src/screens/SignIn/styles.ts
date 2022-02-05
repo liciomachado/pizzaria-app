@@ -1,6 +1,7 @@
 import styled, { css } from 'styled-components/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getBottomSpace } from 'react-native-iphone-x-helper';
+import { Platform } from 'react-native';
 
 export const Container = styled(LinearGradient).attrs(({ theme }) => ({
     colors: theme.COLORS.GRADIENT,
@@ -39,6 +40,7 @@ export const Brand = styled.Image.attrs({
     height: 340px;
     margin-top: 64px;
     margin-bottom: 32px;
+    margin-left: ${Platform.OS === 'ios' ? '20px' : '0px'}
 `;
 
 export const ForgotPasswordButton = styled.TouchableOpacity`

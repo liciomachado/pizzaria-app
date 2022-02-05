@@ -1,6 +1,7 @@
 import { firebase } from '../../firebase';
-import React, { createContext, useContext, ReactNode, useState } from 'react';
+import React, { createContext, useContext, ReactNode, useState, useEffect } from 'react';
 import { Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type User = {
     id: string;
@@ -10,6 +11,8 @@ type User = {
 
 type AuthContextData = {
     signIn: (email: string, password: string) => Promise<void>;
+    signOut: () => Promise<void>;
+    forgotPassword: (email: string) => Promise<void>;
     isLogging: boolean;
     user: User | null;
 }
@@ -17,6 +20,8 @@ type AuthContextData = {
 type AuthProviderProps = {
     children: ReactNode;
 }
+
+const USER_COLLECTION = "@gopizza:users";
 
 const AuthContext = createContext({} as AuthContextData);
 
@@ -38,7 +43,7 @@ function AuthProvider({ children }: AuthProviderProps) {
                     .collection('users')
                     .doc(account.user.uid)
                     .get()
-                    .then(profile => {
+                    .then(async (profile) => {
                         const { name, isAdmin } = profile.data() as User;
 
                         if (profile.exists) {
@@ -47,10 +52,12 @@ function AuthProvider({ children }: AuthProviderProps) {
                                 name,
                                 isAdmin
                             };
-                            console.log(userData);
+
+                            await AsyncStorage.setItem(USER_COLLECTION, JSON.stringify(userData));
                             setUser(userData);
                         };
                     })
+                    .catch(() => Alert.alert('Login', 'Não foi possível buscar os dados de login do usuário.'))
 
             })
             .catch((error: any) => {
@@ -65,8 +72,42 @@ function AuthProvider({ children }: AuthProviderProps) {
             .finally(() => setIsLogging(false));
     }
 
+    async function loadUserStorageData() {
+        setIsLogging(true);
+
+        const storedUser = await AsyncStorage.getItem(USER_COLLECTION);
+
+        if (storedUser) {
+            const userData = JSON.parse(storedUser) as User;
+            console.log(userData);
+            setUser(userData);
+        }
+
+        setIsLogging(false);
+    }
+
+    async function signOut() {
+        await firebase.auth().signOut();
+        await AsyncStorage.removeItem(USER_COLLECTION);
+        setUser(null);
+    }
+
+    async function forgotPassword(email: string) {
+        if (!email)
+            return Alert.alert('Redefinir senha', 'Informe o e-mail.');
+
+        firebase.auth()
+            .sendPasswordResetEmail(email)
+            .then(() => Alert.alert('Redefinir senha', 'Enviamos um link no seu e-mail para redefiniar sua senha.'))
+            .catch(() => Alert.alert('Redefinir senha', 'Não foi possivel enviar o e-mail para redefinir a senha.'))
+    }
+
+    useEffect(() => {
+        loadUserStorageData();
+    }, [])
+
     return (
-        <AuthContext.Provider value={{ isLogging, signIn, user }}>
+        <AuthContext.Provider value={{ isLogging, signIn, user, signOut, forgotPassword }}>
             {children}
         </AuthContext.Provider>
     )
