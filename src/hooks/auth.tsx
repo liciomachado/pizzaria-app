@@ -1,10 +1,17 @@
-import { auth } from '../../firebase';
+import { firebase } from '../../firebase';
 import React, { createContext, useContext, ReactNode, useState } from 'react';
 import { Alert } from 'react-native';
+
+type User = {
+    id: string;
+    name: string;
+    isAdmin: boolean;
+}
 
 type AuthContextData = {
     signIn: (email: string, password: string) => Promise<void>;
     isLogging: boolean;
+    user: User | null;
 }
 
 type AuthProviderProps = {
@@ -15,6 +22,7 @@ const AuthContext = createContext({} as AuthContextData);
 
 function AuthProvider({ children }: AuthProviderProps) {
     const [isLogging, setIsLogging] = useState(false);
+    const [user, setUser] = useState<User | null>(null);
 
     async function signIn(email: string, password: string) {
         if (!email || !password)
@@ -22,10 +30,28 @@ function AuthProvider({ children }: AuthProviderProps) {
 
         setIsLogging(true);
 
-        auth
+        firebase
+            .auth()
             .signInWithEmailAndPassword(email, password)
             .then((account: any) => {
-                console.log(account);
+                firebase.firestore()
+                    .collection('users')
+                    .doc(account.user.uid)
+                    .get()
+                    .then(profile => {
+                        const { name, isAdmin } = profile.data() as User;
+
+                        if (profile.exists) {
+                            const userData = {
+                                id: account.user.uid,
+                                name,
+                                isAdmin
+                            };
+                            console.log(userData);
+                            setUser(userData);
+                        };
+                    })
+
             })
             .catch((error: any) => {
                 const { code } = error;
@@ -40,7 +66,7 @@ function AuthProvider({ children }: AuthProviderProps) {
     }
 
     return (
-        <AuthContext.Provider value={{ isLogging, signIn }}>
+        <AuthContext.Provider value={{ isLogging, signIn, user }}>
             {children}
         </AuthContext.Provider>
     )
