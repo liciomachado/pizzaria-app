@@ -65,7 +65,7 @@ export function Product() {
         })
 
         const fileName = new Date().getTime();
-        const reference = firebase.storage().ref(`/pizzas`).child(new Date().toISOString());
+        const reference = firebase.storage().ref(`/pizzas/${fileName}.png`);
         const snapshot = await reference.put(blob as Blob);
 
         const photo_url = await reference.getDownloadURL();
