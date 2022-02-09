@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Platform, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { firebase } from '../../../firebase';
 import * as ImagePicker from 'expo-image-picker';
-import { ref as storageRef, uploadBytesResumable } from "firebase/storage";
+import * as FileSystem from 'expo-file-system';
+import storage from '@firebase/storage';
 
 import { ButtonBack } from '@components/ButtonBack';
 import { Container, Header, Title, DeleteLabel, Upload, PickImageButton, Label, InputGroup, InputGroupHeader, MaxCharacters, Form } from './styles';
@@ -49,18 +50,25 @@ export function Product() {
             return Alert.alert('Cadastro', 'Informe o preço de todos os tamanhos da pizza.');
 
         setIsLoading(true);
-        const reference = storageRef(firebase.storage(), image);
 
-        // // Creating an upload task 
-        // const uploadTask = uploadBytesResumable(storageReference, file);
-        // const base64 = await FileSystem.readAsStringAsync(photo.uri, { encoding: 'base64' });
+        const blob = await new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.onload = function () {
+                resolve(xhr.response);
+            };
+            xhr.onerror = function () {
+                reject(new TypeError("Network request failed"));
+            }
+            xhr.responseType = "blob";
+            xhr.open("GET", image, true);
+            xhr.send(null);
+        })
 
+        const fileName = new Date().getTime();
+        const reference = firebase.storage().ref(`/pizzas`).child(new Date().toISOString());
+        const snapshot = await reference.put(blob as Blob);
 
-        // const fileName = new Date().getTime();
-        // const reference2 = firebase.storage().ref(`/pizzas/${fileName}.png`);
-
-        // await reference.put(image);
-        // const photo_url = await reference.getDownloadURL();
+        const photo_url = await reference.getDownloadURL();
 
         firebase
             .firestore()
