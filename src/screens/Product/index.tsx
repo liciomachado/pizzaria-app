@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import { Platform, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { firebase } from '../../../firebase';
 import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system';
-import storage from '@firebase/storage';
 
 import { ButtonBack } from '@components/ButtonBack';
 import { Container, Header, Title, DeleteLabel, Upload, PickImageButton, Label, InputGroup, InputGroupHeader, MaxCharacters, Form } from './styles';
